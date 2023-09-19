@@ -23,10 +23,18 @@ content-type: text/html
 x-powered-by: PHP/5.4.1
 ```
 
+脆弱性対策データベースによると、
+
+> PHP には、CGI として使用される設定において query string をコマンドラインオプションとして認識してしまう脆弱性が存在します。
+
+だそうです。
+
+[JVNDB-2012-002235 - JVN iPedia - 脆弱性対策情報データベース](https://jvndb.jvn.jp/ja/contents/2012/JVNDB-2012-002235.html)
+
 PHPのコマンドラインオプションは、[PHP: オプション - Manual](https://www.php.net/manual/ja/features.commandline.options.php)から、
 調べることが、できる。
 
-URLに`?-s`オプションをつけて、`https://ctfq.u1tramarine.blue/q12/?-s`にアクセスしてみると、
+試しにソースコードを出力する`-s`オプションをurlにつけた、`https://ctfq.u1tramarine.blue/q12/?-s`でアクセスしてみると、
 ソースコードが開示された。
 
 ```php
