@@ -12,6 +12,17 @@
 
 `2012:1823`で検索すると、`CVE-2012-1823`というPHPの脆弱性がヒットする。
 
+`curl`でレスポンスヘッダーを見ると、確かにPHPが使われているようだ。
+
+```bash
+$ curl https://ctfq.u1tramarine.blue/q12/ -i
+HTTP/2 200 
+server: nginx
+date: Tue, 19 Sep 2023 12:16:42 GMT
+content-type: text/html
+x-powered-by: PHP/5.4.1
+```
+
 PHPのコマンドラインオプションは、[PHP: オプション - Manual](https://www.php.net/manual/ja/features.commandline.options.php)から、
 調べることが、できる。
 
