@@ -3,7 +3,7 @@ CTF関連情報まとめ
 
 ## 常設CTF
 - [ksnctf](https://ksnctf.sweetduet.info/)
-- [CpawCTF - Main page](https://ctf.cpaw.site/)
+- [CpawCTF](https://ctf.cpaw.site/)
 - [picoCTF - CMU Cybersecurity Competition](https://picoctf.com/)
 - [CryptoHack – A fun, free platform for learning cryptography](https://cryptohack.org/)
 - [OverTheWire: Wargames](https://overthewire.org/wargames/)
@@ -17,3 +17,5 @@ CTF関連情報まとめ
 - [Welcome [Root Me : Hacking and Information Security learning platform]](https://www.root-me.org/?lang=en)
 - [Hacker101 CTF](https://ctf.hacker101.com/)
 - [Google CTF](https://capturetheflag.withgoogle.com/)
+- [247CTF - The game never stops](https://247ctf.com/)
+- [SadServers - Troubleshooting Linux Servers](https://sadservers.com/)
