@@ -13,5 +13,5 @@ CTFで使うようのdockerコンテナ
 3. コンテナイメージを実行する
 
 ```bash
-> docker run -it --rm ctf:1.1 /bin/bash
+> docker run -it --rm --volume $(pwd):/home/hyonsoku ctf:1.1 /bin/bash
 ```
