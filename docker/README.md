@@ -7,11 +7,11 @@ CTFで使うようのdockerコンテナ
 2. イメージをビルドする
 
 ```bash
-> docker build --tag ctf:1.0 .
+> docker build --tag ctf:1.1 .
 ```
 
 3. コンテナイメージを実行する
 
 ```bash
-> docker run -it --rm ctf:1.0 /bin/bash
+> docker run -it --rm ctf:1.1 /bin/bash
 ```
