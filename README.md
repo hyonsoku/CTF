@@ -47,3 +47,4 @@ CTF関連情報まとめ
 - [CTF for Beginners: What is CTF and how to get started! - DEV Community](https://dev.to/atan/what-is-ctf-and-how-to-get-started-3f04)
 - [Beginner’s Guide – SANReN Cyber Security Challenge](https://www.csc.ac.za/?page_id=555)
 - [CTF Support](https://ctf.support/)
+- [HackTricks](https://book.hacktricks.xyz/welcome/readme)
