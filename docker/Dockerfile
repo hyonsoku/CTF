@@ -16,4 +16,4 @@ RUN apt update && apt upgrade -y && apt install -y \
 RUN useradd --create-home --shell /bin/bash hyonsoku
 
 USER hyonsoku
-WORKDIR /home/hyonsokuo
+WORKDIR /home/hyonsoku
